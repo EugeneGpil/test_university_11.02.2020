@@ -1,7 +1,17 @@
 <?php
 
-class TablesController {
-    public function getTable($requestData) {
+require_once $_SERVER["DOCUMENT_ROOT"] . "/app/Helpers/NumericHelper.php";
+use App\Helpers\NumericHelper;
+
+class TablesController
+{
+    private $allowedTables = [
+        "news",
+        "session"
+    ];
+
+    public function getTable($requestData)
+    {
         if (!isset($requestData["table"]) || !$requestData["table"]) {
             return [
                 "status" => "error",
@@ -9,12 +19,7 @@ class TablesController {
             ];
         }
 
-        $allowedTables = [
-            "news",
-            "session"
-        ];
-
-        if (!in_array($requestData["table"], $allowedTables)) {
+        if (!in_array($requestData["table"], $this->allowedTables)) {
             return [
                 "status" => "error",
                 "message" => "Неверное название таблицы"
@@ -22,29 +27,28 @@ class TablesController {
         }
 
         $tableNameWithFistUppercaseLetter = ucfirst($requestData["table"]);
-        $databaseRequest = "SELECT * FROM " . $tableNameWithFistUppercaseLetter;
+        $databaseRequest = "SELECT * FROM `" . $tableNameWithFistUppercaseLetter . "`";
 
         if (isset($requestData["id"]) && $requestData["id"]) {
-            $id = getInt($requestData["id"]);
-            $databaseRequest += "WHERE id = " . $id . " LIMIT 1";
+            $id = NumericHelper\getInt($requestData["id"]);
+
+            if (!$id) {
+                return [
+                    "status" => "error",
+                    "message" => "Некорректное значение id"
+                ];
+            }
+
+            $databaseRequest = $databaseRequest . " WHERE id = '" . $id . "' LIMIT 1";
         }
 
-
-        // return $databaseRequest;
-
-        $neededData = $DB->prepare($databaseRequest);
-
-        return 'hi';
-
-        $neededData = $neededData->execute();
+        global $DB;
+        $neededData = $DB->query($databaseRequest);
         $neededData = $neededData->fetchAll(PDO::FETCH_ASSOC);
-        
-    }
 
-    private function getInt($val) {
-        if (is_numeric($val)) {
-          return (int) round($val + 0);
-        }
-        return 0;
-      }
+        return [
+            "status" => "ok",
+            "payload" => $neededData
+        ];
+    }
 }

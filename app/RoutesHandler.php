@@ -2,18 +2,27 @@
 
 require_once $_SERVER["DOCUMENT_ROOT"] . "/connection.php";
 
-class RoutesHandler {
+class RoutesHandler
+{
     private $routes = [
         [
-            "url" => "/api/get_table",
+            "url" => "/api/table",
             "method" => "GET",
             "path_to_class" => "/app/Controllers/",
             "class" => "TablesController",
             "function" => "getTable"
         ],
+        [
+            "url" => "/api/sessionsubscribe",
+            "method" => "POST",
+            "path_to_class" => "/app/Controllers/",
+            "class" => "SessionsController",
+            "function" => "subscribe"
+        ]
     ];
 
-    public function route(){
+    public function route()
+    {
         $url = $this->getUrl();
         $method = $_SERVER["REQUEST_METHOD"];
 
@@ -38,7 +47,8 @@ class RoutesHandler {
         ];
     }
 
-    private function getUrl() {
+    private function getUrl()
+    {
         $url = $_SERVER["REQUEST_URI"];
         $questionMarkPosition = strpos($url, '?');
         if ($questionMarkPosition === false) {
