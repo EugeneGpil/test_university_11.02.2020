@@ -1,6 +1,8 @@
 <?php
 
 require_once $_SERVER["DOCUMENT_ROOT"] . "/app/Helpers/NumericHelper.php";
+require_once $_SERVER["DOCUMENT_ROOT"] . "/app/Models/News.php";
+
 use App\Helpers\NumericHelper;
 
 class TablesController
@@ -26,10 +28,10 @@ class TablesController
             ];
         }
 
-        $tableNameWithFistUppercaseLetter = ucfirst($requestData["table"]);
-        $databaseRequest = "SELECT * FROM `" . $tableNameWithFistUppercaseLetter . "`";
+        $tableClassName = "\\App\\Models\\" . ucfirst($requestData["table"]);
+        $neededTable = new $tableClassName();
 
-        if (isset($requestData["id"]) && $requestData["id"]) {
+        if (isset($requestData["id"])) {
             $id = NumericHelper\getInt($requestData["id"]);
 
             if (!$id) {
@@ -39,16 +41,15 @@ class TablesController
                 ];
             }
 
-            $databaseRequest = $databaseRequest . " WHERE id = '" . $id . "' LIMIT 1";
+            return [
+                "starus" => "ok",
+                "payload" => $neededTable->getById($id)
+            ];
         }
-
-        global $DB;
-        $neededData = $DB->query($databaseRequest);
-        $neededData = $neededData->fetchAll(PDO::FETCH_ASSOC);
 
         return [
             "status" => "ok",
-            "payload" => $neededData
+            "payload" => $neededTable->getAll()
         ];
     }
 }

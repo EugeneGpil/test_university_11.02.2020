@@ -12,8 +12,8 @@ $migration = $DB->prepare(
     CREATE TABLE IF NOT EXISTS `Speaker` ( `ID` int(11) NOT NULL AUTO_INCREMENT, `Name` varchar(255) NOT NULL, PRIMARY KEY (`ID`) ) ENGINE=InnoDB DEFAULT CHARSET=utf8 AUTO_INCREMENT=3;
     INSERT INTO `Speaker` (`ID`, `Name`) VALUES (1, "Watson") ON DUPLICATE KEY UPDATE ID = 1;
     INSERT INTO `Speaker` (`ID`, `Name`) VALUES (2, "Arnold") ON DUPLICATE KEY UPDATE ID = 2;
-    CREATE TABLE IF NOT EXISTS `SesseionSpeaker` (`ID` int(11) NOT NULL AUTO_INCREMENT, `Session` int(11) NOT NULL, `Speaker` int(11) NOT NULL, PRIMARY KEY (`ID`);
-    CREATE TABLE IF NOT EXISTS `SessionParticipant` (`ID` int(11) NOT NULL AUTO_INCREMEN, `Session` int(11) NOT NULL, `Participant` NOT NULL, PRIMARY KEY (`ID`));'
+    CREATE TABLE IF NOT EXISTS `SesseionSpeaker` (`ID` int(11) NOT NULL AUTO_INCREMENT, `Session` int(11) NOT NULL, `Speaker` int(11) NOT NULL, PRIMARY KEY (`ID`));
+    CREATE TABLE IF NOT EXISTS `SessionParticipant` (`ID` int(11) NOT NULL AUTO_INCREMENT, `Session` int(11) NOT NULL, `Participant` int(11) NOT NULL, PRIMARY KEY (`ID`));'
 );
 $migration->execute();
 echo "DONE\n";
