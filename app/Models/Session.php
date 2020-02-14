@@ -10,10 +10,11 @@ class Session extends Model
 {
     public function __construct()
     {
-        $this->tableName = "Session";
+        $this->tableName = "session";
     }
 
-    public function getAllWithSpeakers()
+    public function getByIdWithSpeaker($id)
     {
+        return $this->getByIdWithRelations($id, "session_speaker");
     }
 }

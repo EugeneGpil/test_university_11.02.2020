@@ -8,8 +8,9 @@ class RoutesHandler
         [
             "url" => "/api/table",
             "method" => "GET",
-            "path_to_class" => "/app/Controllers/",
-            "class" => "TablesController",
+            "path_to_class" => "/app/",
+            "class_namespace" => "App\\",
+            "class" => "TablesHandler",
             "function" => "getTable"
         ],
         [
@@ -36,7 +37,8 @@ class RoutesHandler
             if ($route["url"] == $url && $route["method"] == $method) {
                 require_once $_SERVER["DOCUMENT_ROOT"] . $route["path_to_class"] . $route["class"] . ".php";
 
-                $needed = new $route["class"]();
+                $className = $route["class_namespace"] . $route["class"];
+                $needed = new $className();
                 return $needed->{$route["function"]}($requestData);
             }
         }
