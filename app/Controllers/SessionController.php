@@ -17,7 +17,7 @@ class SessionController
         if (!isset($request["id"])) {
             return [
                 "stutus" => "ok",
-                "payload" => $session->getAll()
+                "payload" => $session->getAllWithSpeakers()
             ];
         }
 

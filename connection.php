@@ -9,3 +9,4 @@ $DB = new PDO(
     $CONFIG["database_password"],
     [PDO::ATTR_TIMEOUT => $CONFIG["database_connection_timeout"]]
 );
+$DB->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);

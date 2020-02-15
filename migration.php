@@ -14,6 +14,8 @@ $migration = $DB->prepare(
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8 AUTO_INCREMENT=2;
     INSERT INTO `news` (`id`, `participant_id`, `news_title`, `news_message`, `likes_counter`)
         VALUES (1, 1, "New agenda!", "Please visit our site!", 0) ON DUPLICATE KEY UPDATE `id` = 1;
+    INSERT INTO `news` (`id`, `participant_id`, `news_title`, `news_message`, `likes_counter`)
+        VALUES (2, 1, "Second agenda!", "Please visit our site again!", 0) ON DUPLICATE KEY UPDATE `id` = 2;
 
     CREATE TABLE IF NOT EXISTS `participant` (
         `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -53,6 +55,8 @@ $migration = $DB->prepare(
         CONSTRAINT `session_speaker_session` FOREIGN KEY (`session`) REFERENCES `session` (`id`) ON DELETE CASCADE,
         CONSTRAINT `session_speaker_speaker` FOREIGN KEY (`speaker`) REFERENCES `speaker` (`id`) ON DELETE CASCADE
     );
+    INSERT INTO `session_speaker` (`id`, `session`, `speaker`) VALUES (1, 1, 1) ON DUPLICATE KEY UPDATE `id` = 1;
+    INSERT INTO `session_speaker` (`id`, `session`, `speaker`) VALUES (2, 1, 2) ON DUPLICATE KEY UPDATE `id` = 2;
 
     CREATE TABLE IF NOT EXISTS `session_participant` (
         `id` int(11) NOT NULL AUTO_INCREMENT,
