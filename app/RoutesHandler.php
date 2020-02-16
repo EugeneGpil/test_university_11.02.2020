@@ -17,7 +17,8 @@ class RoutesHandler
             "url" => "/api/sessionsubscribe",
             "method" => "POST",
             "path_to_class" => "/app/Controllers/",
-            "class" => "SessionsController",
+            "class_namespace" => "App\\Controllers\\",
+            "class" => "SessionController",
             "function" => "subscribe"
         ]
     ];

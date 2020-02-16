@@ -7,28 +7,66 @@ use PDO;
 class Model
 {
     protected $tabelName;
-    protected $columnNames;
 
     public function getAll() : array
     {
         global $DB;
         $all = $DB->query("SELECT * FROM `" . $this->tableName . "`");
-        return $this->changeKeys($all->fetchAll());
+        return $this->changeListKeys($all->fetchAll());
     }
 
     public function getById($id) : array
     {
-        global $DB;
-        $needed = $DB->prepare("SELECT * FROM `" . $this->tableName . "` WHERE `ID` = ? LIMIT 1");
-        $needed->execute([$id]);
+        return $this->getByColumn("id", $id);
+    }
 
-        return $this->changeKeys($needed->fetchAll());;
+    public function getByColumn($columnName, $value)
+    {
+        global $DB;
+        $needed = $DB->prepare("SELECT * FROM `" . $this->tableName . "` WHERE `" . $columnName . "` = ? LIMIT 1");
+        $needed->execute([$value]);
+        $needed = $needed->fetchAll();
+        if (empty($needed)) { return []; }
+        return $this->changeArrayKeys($needed[0]);
+    }
+
+    protected function addRelation($relationshipTableName, $id1, $id2) : bool
+    {
+        $model = new Model();
+        [$firstTableName, $secondTableName] = $model->getRelatedTableNames($relationshipTableName);
+
+        global $DB;
+        $request = $DB->prepare("
+            INSERT INTO `" . $relationshipTableName . "` (`" . $firstTableName . "`, `" . $secondTableName . "`)
+            VALUES (?, ?)
+        ");
+        $request->execute([$id1, $id2]);
+        return true;
+    }
+
+    protected function isItRelated($relationsTableName, $id1, $id2) : bool
+    {
+        $model = new Model();
+        [$firstTableName, $secondTableName] = $model->getRelatedTableNames($relationsTableName);
+
+        global $DB;
+        $result = $DB->prepare("
+            SELECT COUNT(*)
+            FROM `" . $relationsTableName . "`
+            WHERE `" . $firstTableName . "` = ? AND `" . $secondTableName . "` = ?;
+        ");
+        $result->execute([$id1, $id2]);
+        $result = $result->fetchAll()[0];
+
+        return (bool) $result["COUNT(*)"];
     }
 
     protected function getByIdWithRelations($id, $relationshipTableName) : array
     {
 
         $mainData = $this->getById($id);
+
+        if (empty($mainData)) { return []; }
 
         $toRelateTableName = $this->getToRelateTableName($relationshipTableName);
 
@@ -42,50 +80,90 @@ class Model
         $relations->execute([$id]);
         $relations = $relations->fetchAll();
 
-        $mainData[0][ucfirst($toRelateTableName . "s")] = $this->changeKeys($relations);
+        $mainData[ucfirst($toRelateTableName . "s")] = $this->changeListKeys($relations);
         return $mainData;
     }
 
-    protected function getAllWithRelations($relationshipTableName)
+    protected function getAllWithRelations($relationshipTableName) : array
     {
         $mainData = $this->getAll();
 
+        $secondTableName = $this->getToRelateTableName($relationshipTableName);
+
         global $DB;
         $relations = $DB->query("
-            SELECT `" . $this->tableName . "`, `" . $this->getToRelateTableName($relationshipTableName) . "`
+            SELECT `" . $this->tableName . "`, `" . $secondTableName . "`
             FROM `" . $relationshipTableName . "`;
         ");
         $relations = $relations->fetchAll();
 
         $secondTable = $DB->query("
-            SELECT * FROM `" . $this->getToRelateTableName($relationshipTableName) . "`;
+            SELECT * FROM `" . $secondTableName . "`;
         ");
         $secondTable = $secondTable->fetchAll();
+        
+        foreach ($mainData as &$mainElement) {
+            $allRelations = $this->getAllRelations(
+                $relations, $relationshipTableName, $secondTableName, $mainElement["ID"]
+            );
+            $mainElement[ucfirst($secondTableName . "s")] =
+                $this->changeListKeys($this->getByIds($secondTable, $allRelations));
+        }
 
-        /////////////////
-
-        return $secondTable;
+        return $mainData;
     }
 
-    private function changeKeys($array) : array
+    private function getRelatedTableNames($relationshipTableName) : array
+    {
+        $underscorePosition = strpos($relationshipTableName, '_');
+        $firstTableName = substr($relationshipTableName, 0, $underscorePosition);
+        $secondTableName = substr($relationshipTableName, $underscorePosition + 1);
+        return [$firstTableName, $secondTableName];
+    }
+
+    private function getByIds($table, $ids) : array
+    {
+        $result = [];
+        foreach ($table as $element) {
+            if (in_array($element["id"], $ids)) {
+                $result[] = $element;
+            }
+        }
+        return $result;
+    }
+
+    private function getAllRelations($relations, $relationshipTableName, $secondTableName, $id) : array
+    {
+        $relationsIds = [];
+
+        foreach ($relations as $relation) {
+            if ($relation[$this->tableName] == $id) {
+                $relationsIds[] = $relation[$secondTableName];
+            }
+        }
+
+        return $relationsIds;
+    }
+
+    private function changeListKeys($array) : array
     {
         foreach ($array as &$element) {
-            $element = $this->changeArrayKeysToPascalCase($element);
+            $element = $this->changeArrayKeys($element);
         }
         return $array;
     }
 
-    private function changeArrayKeysToPascalCase($array) : array
+    private function changeArrayKeys($array) : array
     {
         foreach ($array as $key => $element) {
-            $this->changeKeyToPascalCase($array, $key, $element);
+            $this->changeKey($array, $key, $element);
         }
         return $array;
     }
 
-    private function changeKeyToPascalCase(&$element, $key, $value) : void
+    private function changeKey(&$element, $key, $value) : void
     {
-        $element[$this->toPascalCase($key)] = $value;
+        $element[$this->getChangedKey($key)] = $value;
         unset($element[$key]);
     }
 
@@ -99,7 +177,7 @@ class Model
         return substr($relationshipTableName, $underscorePosition + 1);
     }
 
-    private function toPascalCase($string) : string
+    private function getChangedKey($string) : string
     {
         if ($string == "id") {
             return "ID";

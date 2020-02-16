@@ -8,7 +8,8 @@ use App\Models\Base\Model;
 
 class Session extends Model
 {
-    private $RelationsToSpeakersTableName = "session_speaker";
+    private $relationsToSpeakersTableName = "session_speaker";
+    private $relationsToParticipantsTableName = "session_participant";
 
     public function __construct()
     {
@@ -17,11 +18,26 @@ class Session extends Model
 
     public function getByIdWithSpeaker($id)
     {
-        return $this->getByIdWithRelations($id, $this->RelationsToSpeakersTableName);
+        return $this->getByIdWithRelations($id, $this->relationsToSpeakersTableName);
+    }
+
+    public function getByIdWithParticipants($id)
+    {
+        return $this->getByIdWithRelations($id, $this->relationsToParticipantsTableName);
     }
 
     public function getAllWithSpeakers()
     {
-        return $this->getAllWithRelations($this->RelationsToSpeakersTableName);
+        return $this->getAllWithRelations($this->relationsToSpeakersTableName);
+    }
+
+    public function isSessionRelatedToParticipant($sessionId, $participantId)
+    {
+        return $this->isItRelated($this->relationsToParticipantsTableName, $sessionId, $participantId);
+    }
+
+    public function addParticipant($sessionId, $participantId)
+    {
+        return $this->addRelation($this->relationsToParticipantsTableName, $sessionId, $participantId);
     }
 }

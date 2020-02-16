@@ -3,9 +3,11 @@
 namespace App\Controllers;
 
 require_once $_SERVER["DOCUMENT_ROOT"] . "/app/Models/Session.php";
+require_once $_SERVER["DOCUMENT_ROOT"] . "/app/Models/Participant.php";
 require_once $_SERVER["DOCUMENT_ROOT"] . "/app/Helpers/NumericHelper.php";
 
 use App\Models\Session;
+use App\Models\Participant;
 use App\Helpers\NumericHelper;
 
 class SessionController
@@ -61,10 +63,55 @@ class SessionController
             ];
         }
 
-        global $DB;
-        $session = $DB->query("SELECT `NumberOfRecorded`, `NumberOfSeats` FROM `Session` WHERE `ID` = '" . $sessionId . "'");
-        $session = $session->fetchAll(PDO::FETCH_ASSOC);
+        $participant = new Participant();
+        $participantByEmail = $participant->getByColumn("email", $requestData["userEmail"]);
 
-        return $session;
+        if (empty($participantByEmail)) {
+            return [
+                "status" => "error",
+                "message" => "Пользователь с данной почтой не найдет"
+            ];
+        }
+
+        $session = new Session();
+        $sessionByIdWithPartisipants = $session->getByIdWithParticipants($requestData["sessionId"]);
+
+        if (empty($sessionByIdWithPartisipants)) {
+            return [
+                "status" => "error",
+                "message" => "Лекция с данным ID не найдена"
+            ];
+        }
+
+        if ($this->isValueExist($sessionByIdWithPartisipants["Participants"], "ID", $participantByEmail["ID"])) {
+            return [
+                "status" => "ok",
+                "message" => "Вы уже записывались"
+            ];
+        }
+
+        if (count($sessionByIdWithPartisipants["Participants"]) >= $sessionByIdWithPartisipants["NumberOfSeats"]) {
+            return [
+                "status" => "error",
+                "message" => "Извините, все места заняты"
+            ];
+        }
+
+        $session->addParticipant($requestData["sessionId"], $participantByEmail["ID"]);
+
+        return [
+            "status" => "ok",
+            "message" => "Спасибо, вы успешно записаны!"
+        ];
+    }
+
+    private function isValueExist($array, $key, $value) : bool
+    {
+        foreach ($array as $element) {
+            if ($element[$key] == $value) {
+                return true;
+            }
+        }
+        return false;
     }
 }

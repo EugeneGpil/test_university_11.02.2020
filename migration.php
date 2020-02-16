@@ -2,8 +2,8 @@
 
 require_once "connection.php";
 
-$migration = $DB->prepare(
-    'USE `' . $CONFIG["database_name"] . '`;
+$migration = $DB->prepare('
+    USE `' . $CONFIG["database_name"] . '`;
     CREATE TABLE IF NOT EXISTS `news` ( 
         `id` int(11) NOT NULL AUTO_INCREMENT,
         `participant_id` int(11) NOT NULL,
@@ -25,6 +25,8 @@ $migration = $DB->prepare(
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8 AUTO_INCREMENT=2;
     INSERT INTO `participant` (`id`, `email`, `name`)
         VALUES (1, "user@example.com", "The first user") ON DUPLICATE KEY UPDATE `id` = 1;
+    INSERT INTO `participant` (`id`, `email`, `name`)
+        VALUES (2, "user2@example.com", "The second user") ON DUPLICATE KEY UPDATE `id` = 2;
 
     CREATE TABLE IF NOT EXISTS `session` (
         `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -34,9 +36,12 @@ $migration = $DB->prepare(
         `number_of_seats`int(11) NOT NULL DEFAULT "20",
         PRIMARY KEY (`id`)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8 AUTO_INCREMENT=1;
-    INSERT INTO `session` (`id`, `name`, `time_of_event`, `description`)
-        VALUES (1, "Introducing in HTML", "2020-02-15 10:00:00", "Start your new career!") 
+    INSERT INTO `session` (`id`, `name`, `time_of_event`, `description`, `number_of_seats`)
+        VALUES (1, "Introducing in HTML", "2020-02-15 10:00:00", "Start your new career!", 1) 
         ON DUPLICATE KEY UPDATE `id` = 1;
+    INSERT INTO `session` (`id`, `name`, `time_of_event`, `description`)
+        VALUES (2, "Introducing in CSS", "2020-02-15 10:00:00", "This is your chanсe!") 
+        ON DUPLICATE KEY UPDATE `id` = 2;
 
     CREATE TABLE IF NOT EXISTS `speaker` (
         `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -57,6 +62,7 @@ $migration = $DB->prepare(
     );
     INSERT INTO `session_speaker` (`id`, `session`, `speaker`) VALUES (1, 1, 1) ON DUPLICATE KEY UPDATE `id` = 1;
     INSERT INTO `session_speaker` (`id`, `session`, `speaker`) VALUES (2, 1, 2) ON DUPLICATE KEY UPDATE `id` = 2;
+    INSERT INTO `session_speaker` (`id`, `session`, `speaker`) VALUES (3, 2, 2) ON DUPLICATE KEY UPDATE `id` = 3;
 
     CREATE TABLE IF NOT EXISTS `session_participant` (
         `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -66,7 +72,8 @@ $migration = $DB->prepare(
         UNIQUE KEY `relation` (`session`, `participant`),
         CONSTRAINT `session_participant_session` FOREIGN KEY (`session`) REFERENCES `session` (`id`) ON DELETE CASCADE,
         CONSTRAINT `session_participant_participant` FOREIGN KEY (`participant`) REFERENCES `participant` (`id`) ON DELETE CASCADE
-    );'
-);
+    );
+    INSERT INTO `session_participant` (`id`, `session`, `participant`) VALUES (1, 1, 1) ON DUPLICATE KEY UPDATE `id` = 1;
+');
 $migration->execute();
 echo "DONE\n";
