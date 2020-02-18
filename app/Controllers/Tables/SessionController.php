@@ -1,9 +1,7 @@
 <?php
 
-namespace App\Controllers;
+namespace App\Controllers\Tables;
 
-require_once $_SERVER["DOCUMENT_ROOT"] . "/app/Models/Session.php";
-require_once $_SERVER["DOCUMENT_ROOT"] . "/app/Models/Participant.php";
 require_once $_SERVER["DOCUMENT_ROOT"] . "/app/Helpers/NumericHelper.php";
 
 use App\Models\Session;

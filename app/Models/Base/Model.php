@@ -4,14 +4,34 @@ namespace App\Models\Base;
 
 use PDO;
 
-class Model
+abstract class Model
 {
     protected $tabelName;
+    protected static $DB = null;
+
+    public static function getDB() {
+
+        if (self::$DB) {
+            return self::$DB;
+        }
+
+        $config = include(__DIR__ . "/../../../config.php");
+        self::$DB = new PDO(
+            "mysql:host=" . $config["database_server"] .
+                ";dbname=" . $config["database_name"],
+            $config["database_user"],
+            $config["database_password"],
+            [
+                PDO::ATTR_TIMEOUT => $config["database_connection_timeout"],
+                PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC
+            ]
+        );
+        return self::$DB;
+    }
 
     public function getAll() : array
     {
-        global $DB;
-        $all = $DB->query("SELECT * FROM `" . $this->tableName . "`");
+        $all = $this->getDB()->query("SELECT * FROM `" . $this->tableName . "`");
         return $this->changeListKeys($all->fetchAll());
     }
 
@@ -22,8 +42,9 @@ class Model
 
     public function getByColumn($columnName, $value)
     {
-        global $DB;
-        $needed = $DB->prepare("SELECT * FROM `" . $this->tableName . "` WHERE `" . $columnName . "` = ? LIMIT 1");
+        $needed = $this->getDB()->prepare("
+            SELECT * FROM `" . $this->tableName . "` WHERE `" . $columnName . "` = ? LIMIT 1
+        ");
         $needed->execute([$value]);
         $needed = $needed->fetchAll();
         if (empty($needed)) { return []; }
@@ -35,8 +56,7 @@ class Model
         $model = new Model();
         [$firstTableName, $secondTableName] = $model->getRelatedTableNames($relationshipTableName);
 
-        global $DB;
-        $request = $DB->prepare("
+        $request = $this->getDB()->prepare("
             INSERT INTO `" . $relationshipTableName . "` (`" . $firstTableName . "`, `" . $secondTableName . "`)
             VALUES (?, ?)
         ");
@@ -49,8 +69,7 @@ class Model
         $model = new Model();
         [$firstTableName, $secondTableName] = $model->getRelatedTableNames($relationsTableName);
 
-        global $DB;
-        $result = $DB->prepare("
+        $result = $this->getDB()->prepare("
             SELECT COUNT(*)
             FROM `" . $relationsTableName . "`
             WHERE `" . $firstTableName . "` = ? AND `" . $secondTableName . "` = ?;
@@ -70,8 +89,7 @@ class Model
 
         $toRelateTableName = $this->getToRelateTableName($relationshipTableName);
 
-        global $DB;
-        $relations = $DB->prepare("
+        $relations = $this->getDB()->prepare("
             SELECT `" . $toRelateTableName . "`.`id`, `" . $toRelateTableName . "`.`name`
                 FROM `" . $relationshipTableName . "` LEFT JOIN `$toRelateTableName`
                 ON `" . $toRelateTableName . "` = `" . $toRelateTableName . "`.`id`
@@ -90,14 +108,13 @@ class Model
 
         $secondTableName = $this->getToRelateTableName($relationshipTableName);
 
-        global $DB;
-        $relations = $DB->query("
+        $relations = $this->getDB()->query("
             SELECT `" . $this->tableName . "`, `" . $secondTableName . "`
             FROM `" . $relationshipTableName . "`;
         ");
         $relations = $relations->fetchAll();
 
-        $secondTable = $DB->query("
+        $secondTable = $this->getDB()->query("
             SELECT * FROM `" . $secondTableName . "`;
         ");
         $secondTable = $secondTable->fetchAll();

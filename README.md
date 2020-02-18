@@ -4,6 +4,8 @@ How to start project:
 
 Set config params in config.php (use config.example.php).
 
+Run "composer install".
+
 Run 'php migration.php'.
 
 That's all.

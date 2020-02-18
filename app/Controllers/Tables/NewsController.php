@@ -1,9 +1,6 @@
 <?php
 
-namespace App\Controllers;
-
-require_once $_SERVER["DOCUMENT_ROOT"] . "/app/Models/News.php";
-require_once $_SERVER["DOCUMENT_ROOT"] . "/app/Helpers/NumericHelper.php";
+namespace App\Controllers\Tables;
 
 use App\Models\News;
 use App\Helpers\NumericHelper;
@@ -16,7 +13,7 @@ class NewsController
 
         if (!isset($request["id"])) {
             return [
-                "stutus" => "ok",
+                "status" => "ok",
                 "payload" => $news->getAll()
             ];
         }

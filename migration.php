@@ -1,9 +1,13 @@
 <?php
 
-require_once "connection.php";
+require_once __DIR__ . "/app/Models/Base/Model.php";
 
-$migration = $DB->prepare('
-    USE `' . $CONFIG["database_name"] . '`;
+use \App\Models\Base\Model;
+
+$config = include(__DIR__ . "/config.php");
+
+$migration = Model::getDB()->prepare('
+    USE `' . $config["database_name"] . '`;
     CREATE TABLE IF NOT EXISTS `news` ( 
         `id` int(11) NOT NULL AUTO_INCREMENT,
         `participant_id` int(11) NOT NULL,

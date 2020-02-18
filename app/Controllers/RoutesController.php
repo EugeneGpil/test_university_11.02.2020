@@ -1,31 +1,27 @@
 <?php
 
-require_once $_SERVER["DOCUMENT_ROOT"] . "/connection.php";
+namespace App\Controllers;
 
-class RoutesHandler
+class RoutesController
 {
-    private $routes = [
+    private const ROUTES = [
         [
             "url" => "/api/table",
             "method" => "GET",
-            "path_to_class" => "/app/",
-            "class_namespace" => "App\\",
-            "class" => "TablesHandler",
+            "class" => "\\App\\Controllers\\TablesController",
             "function" => "getTable"
         ],
         [
             "url" => "/api/sessionsubscribe",
             "method" => "POST",
-            "path_to_class" => "/app/Controllers/",
-            "class_namespace" => "App\\Controllers\\",
-            "class" => "SessionController",
+            "class" => "\\App\\Controllers\\Tables\\SessionController",
             "function" => "subscribe"
         ]
     ];
 
-    public function route()
+    public static function route()
     {
-        $url = $this->getUrl();
+        $url = self::getUrl();
         $method = $_SERVER["REQUEST_METHOD"];
 
         if ($method == "GET") {
@@ -34,11 +30,12 @@ class RoutesHandler
             $requestData = json_decode(file_get_contents("php://input"), true);
         }
 
-        foreach ($this->routes as $route) {
-            if ($route["url"] == $url && $route["method"] == $method) {
-                require_once $_SERVER["DOCUMENT_ROOT"] . $route["path_to_class"] . $route["class"] . ".php";
+        header('Content-Type: application/json');
 
-                $className = $route["class_namespace"] . $route["class"];
+        foreach (self::ROUTES as $route) {
+            if ($route["url"] == $url && $route["method"] == $method) {
+
+                $className = $route["class"];
                 $needed = new $className();
                 return $needed->{$route["function"]}($requestData);
             }
@@ -50,7 +47,7 @@ class RoutesHandler
         ];
     }
 
-    private function getUrl()
+    private static function getUrl()
     {
         $url = $_SERVER["REQUEST_URI"];
         $questionMarkPosition = strpos($url, '?');

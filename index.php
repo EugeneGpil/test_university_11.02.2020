@@ -1,7 +1,5 @@
 <?php
 
-require_once $_SERVER["DOCUMENT_ROOT"] . "/app/RoutesHandler.php";
+require_once $_SERVER["DOCUMENT_ROOT"] . "/vendor/autoload.php";
 
-$routesHandler = new RoutesHandler();
-header('Content-Type: application/json');
-echo json_encode($routesHandler->route());
+echo json_encode(\App\Controllers\RoutesController::route());

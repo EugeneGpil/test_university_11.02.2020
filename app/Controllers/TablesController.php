@@ -1,10 +1,10 @@
 <?php
 
-namespace App;
+namespace App\Controllers;
 
-class TablesHandler
+class TablesController
 {
-    private $allowedTables = [
+    private const ALLOWED_TABLES = [
         "news",
         "session"
     ];
@@ -18,16 +18,14 @@ class TablesHandler
             ];
         }
 
-        if (!in_array($requestData["table"], $this->allowedTables)) {
+        if (!in_array($requestData["table"], self::ALLOWED_TABLES)) {
             return [
                 "status" => "error",
                 "message" => "Неверное название таблицы"
             ];
         }
 
-        require_once $_SERVER["DOCUMENT_ROOT"] . "/app/Controllers/" . ucfirst($requestData["table"]) . "Controller.php";
-
-        $tableController = "\\App\\Controllers\\" . ucfirst($requestData["table"]) . "Controller";
+        $tableController = "\\App\\Controllers\\Tables\\" . ucfirst($requestData["table"]) . "Controller";
         $neededController = new $tableController();
         return $neededController->getTable($requestData);
     }
