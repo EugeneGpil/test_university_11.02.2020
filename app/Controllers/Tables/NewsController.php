@@ -4,8 +4,9 @@ namespace App\Controllers\Tables;
 
 use App\Models\News;
 use App\Helpers\NumericHelper;
+use App\Controllers\Base\Controller;
 
-class NewsController
+class NewsController extends Controller
 {
     public function getTable($request)
     {
@@ -18,7 +19,7 @@ class NewsController
             ];
         }
 
-        $id = NumericHelper\getInt($request["id"]);
+        $id = $this->getInt($request["id"]);
 
         if (!$id) {
             return [

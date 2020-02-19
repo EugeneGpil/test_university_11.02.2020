@@ -2,7 +2,9 @@
 
 namespace App\Controllers;
 
-class RoutesController
+use App\Controllers\Base\Controller;
+
+class RoutesController extends Controller
 {
     private const ROUTES = [
         [
@@ -30,8 +32,6 @@ class RoutesController
             $requestData = json_decode(file_get_contents("php://input"), true);
         }
 
-        header('Content-Type: application/json');
-
         foreach (self::ROUTES as $route) {
             if ($route["url"] == $url && $route["method"] == $method) {
 
@@ -41,10 +41,7 @@ class RoutesController
             }
         }
 
-        return [
-            "status" => "error",
-            "message" => "Неправильный адрес или метод"
-        ];
+        return self::correctResponse(false, "Method not allowed");
     }
 
     private static function getUrl()

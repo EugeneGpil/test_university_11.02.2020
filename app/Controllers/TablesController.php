@@ -2,7 +2,9 @@
 
 namespace App\Controllers;
 
-class TablesController
+use App\Controllers\Base\Controller;
+
+class TablesController extends Controller
 {
     private const ALLOWED_TABLES = [
         "news",

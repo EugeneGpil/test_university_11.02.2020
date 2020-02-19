@@ -2,13 +2,11 @@
 
 namespace App\Controllers\Tables;
 
-require_once $_SERVER["DOCUMENT_ROOT"] . "/app/Helpers/NumericHelper.php";
-
 use App\Models\Session;
 use App\Models\Participant;
-use App\Helpers\NumericHelper;
+use App\Controllers\Base\Controller;
 
-class SessionController
+class SessionController extends Controller
 {
     public function getTable($request)
     {
@@ -21,7 +19,7 @@ class SessionController
             ];
         }
 
-        $id = NumericHelper\getInt($request["id"]);
+        $id = $this->getInt($request["id"]);
 
         if (!$id) {
             return [
@@ -52,7 +50,7 @@ class SessionController
             ];
         }
 
-        $sessionId = NumericHelper\getInt($requestData["sessionId"]);
+        $sessionId = $this->getInt($requestData["sessionId"]);
 
         if (!$sessionId) {
             return [
