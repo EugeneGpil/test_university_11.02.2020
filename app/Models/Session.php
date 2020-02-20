@@ -14,6 +14,27 @@ class Session extends Model
     public function __construct()
     {
         $this->tableName = "session";
+
+        $this->columnNames = [
+            "id",
+            "name",
+            "time_of_event",
+            "description",
+            "number_of_seats"
+        ];
+
+        $this->relationTableColumnNames = [
+            $this->relationsToSpeakersTableName => [
+                "id",
+                "session",
+                "speaker"
+            ],
+            $this->relationsToParticipantsTableName => [
+                "id",
+                "session",
+                "participant"
+            ]
+        ];
     }
 
     public function getByIdWithSpeaker($id)

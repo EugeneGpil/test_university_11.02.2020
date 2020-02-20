@@ -7,7 +7,18 @@ use PDO;
 abstract class Model
 {
     protected $tabelName;
+    protected $columnNames;
+    protected $relationTableColumnNames;
     protected static $DB = null;
+
+    private const TABLE_NAMES = [
+        "news",
+        "participant",
+        "session",
+        "speaker",
+        "session_participant",
+        "session_speaker"
+    ];
 
     public static function getDB() {
 
@@ -31,6 +42,7 @@ abstract class Model
 
     public function getAll() : array
     {
+        if (!in_array($this->tableName, self::TABLE_NAMES)) { return []; }
         $all = $this->getDB()->query("SELECT * FROM `" . $this->tableName . "`");
         return $this->changeListKeys($all->fetchAll());
     }
@@ -42,6 +54,8 @@ abstract class Model
 
     public function getByColumn($columnName, $value)
     {
+        if (!in_array($this->tableName, self::TABLE_NAMES)
+            || !in_array($columnName, $this->columnNames)) { return []; }
         $needed = $this->getDB()->prepare("
             SELECT * FROM `" . $this->tableName . "` WHERE `" . $columnName . "` = ? LIMIT 1
         ");
@@ -53,8 +67,11 @@ abstract class Model
 
     protected function addRelation($relationshipTableName, $id1, $id2) : bool
     {
-        $model = new Model();
-        [$firstTableName, $secondTableName] = $model->getRelatedTableNames($relationshipTableName);
+        [$firstTableName, $secondTableName] = self::getRelatedTableNames($relationshipTableName);
+
+        if (!$this->isRelationTableNamesAllowed($relationshipTableName, $firstTableName, $secondTableName)) {
+            return [];
+        }
 
         $request = $this->getDB()->prepare("
             INSERT INTO `" . $relationshipTableName . "` (`" . $firstTableName . "`, `" . $secondTableName . "`)
@@ -64,10 +81,24 @@ abstract class Model
         return true;
     }
 
+    protected function isRelationTableNamesAllowed($relationshipTableName, $firstTableName, $secondTableName)
+    {
+        if (!in_array($relationshipTableName, self::TABLE_NAMES)
+            || !isset($this->relationTableColumnNames[$relationshipTableName])
+            || !in_array($firstTableName, $this->relationTableColumnNames[$relationshipTableName])
+            || !in_array($secondTableName, $this->relationTableColumnNames[$relationshipTableName]))
+                { return false; }
+
+        return true;
+    }
+
     protected function isItRelated($relationsTableName, $id1, $id2) : bool
     {
-        $model = new Model();
-        [$firstTableName, $secondTableName] = $model->getRelatedTableNames($relationsTableName);
+        [$firstTableName, $secondTableName] = self::getRelatedTableNames($relationsTableName);
+
+        if (!$this->isRelationTableNamesAllowed($relationsTableName, $firstTableName, $secondTable)) {
+            return [];
+        }
 
         $result = $this->getDB()->prepare("
             SELECT COUNT(*)
@@ -89,6 +120,13 @@ abstract class Model
 
         $toRelateTableName = $this->getToRelateTableName($relationshipTableName);
 
+        if (!in_array($toRelateTableName, self::TABLE_NAMES)
+            || !in_array($relationshipTableName, self::TABLE_NAMES)
+            || !in_array($this->tableName, self::TABLE_NAMES)
+            || !isset($this->relationTableColumnNames[$relationshipTableName])
+            || !in_array($toRelateTableName, $this->relationTableColumnNames[$relationshipTableName]))
+                { return []; }
+
         $relations = $this->getDB()->prepare("
             SELECT `" . $toRelateTableName . "`.`id`, `" . $toRelateTableName . "`.`name`
                 FROM `" . $relationshipTableName . "` LEFT JOIN `$toRelateTableName`
@@ -108,11 +146,19 @@ abstract class Model
 
         $secondTableName = $this->getToRelateTableName($relationshipTableName);
 
+        if (!$this->isRelationTableNamesAllowed($relationshipTableName, $this->tableName, $secondTableName)) {
+            return [];
+        }
+
         $relations = $this->getDB()->query("
             SELECT `" . $this->tableName . "`, `" . $secondTableName . "`
             FROM `" . $relationshipTableName . "`;
         ");
         $relations = $relations->fetchAll();
+
+        if (!in_array($secondTableName, self::TABLE_NAMES)) {
+            return [];
+        }
 
         $secondTable = $this->getDB()->query("
             SELECT * FROM `" . $secondTableName . "`;
@@ -130,7 +176,7 @@ abstract class Model
         return $mainData;
     }
 
-    private function getRelatedTableNames($relationshipTableName) : array
+    protected static function getRelatedTableNames($relationshipTableName) : array
     {
         $underscorePosition = strpos($relationshipTableName, '_');
         $firstTableName = substr($relationshipTableName, 0, $underscorePosition);

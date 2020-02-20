@@ -11,7 +11,7 @@ abstract class Controller
         return 0;
     }
 
-    protected static function correctResponse($status, $payload, $message = null) {
+    protected static function response($status, $payload, $message = null) {
         $response["status"] = $status ? "ok" : "error";
         header('Content-Type: application/json');
         if ($payload && is_string($payload)) {

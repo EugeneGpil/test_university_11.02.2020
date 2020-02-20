@@ -13,24 +13,15 @@ class NewsController extends Controller
         $news = new News();
 
         if (!isset($request["id"])) {
-            return [
-                "status" => "ok",
-                "payload" => $news->getAll()
-            ];
+            return self::response(true, $news->getAll());
         }
 
         $id = $this->getInt($request["id"]);
 
         if (!$id) {
-            return [
-                "status" => "error",
-                "message" => "Некорректное значение id"
-            ];
+            return self::response(false, "Некорректное значение id");
         }
 
-        return [
-            "status" => "ok",
-            "payload" => $news->getById($id)
-        ];
+        return self::response(true, $news->getById($id));
     }
 }

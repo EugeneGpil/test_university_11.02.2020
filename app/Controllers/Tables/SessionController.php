@@ -13,92 +13,58 @@ class SessionController extends Controller
         $session = new Session();
 
         if (!isset($request["id"])) {
-            return [
-                "stutus" => "ok",
-                "payload" => $session->getAllWithSpeakers()
-            ];
+            return self::response(true, $session->getAllWithSpeakers());
         }
 
         $id = $this->getInt($request["id"]);
 
         if (!$id) {
-            return [
-                "status" => "error",
-                "message" => "Некорректное значение id"
-            ];
+            return self::response(false, "Некорректное значение id");
         }
 
-        return [
-            "status" => "ok",
-            "payload" => $session->getByIdWithSpeaker($id)
-        ];
+        return self::response(true, $session->getByIdWithSpeaker($id));
     }
 
     public function subscribe($requestData)
     {
         if (!isset($requestData["userEmail"]) || !$requestData["userEmail"]) {
-            return [
-                "status" => "error",
-                "message" => "Почта не указана"
-            ];
+            return self::response(false, "Почта не указана");
         }
 
         if (!isset($requestData["sessionId"]) || !$requestData["sessionId"]) {
-            return [
-                "status" => "error",
-                "message" => "ID лекции не указан"
-            ];
+            return self::response(false, "ID лекции не указан");
         }
 
         $sessionId = $this->getInt($requestData["sessionId"]);
 
         if (!$sessionId) {
-            return [
-                "status" => "error",
-                "message" => "Некорректное значение ID лекции"
-            ];
+            return self::response(false, "Некорректное значение ID лекции");
         }
 
         $participant = new Participant();
         $participantByEmail = $participant->getByColumn("email", $requestData["userEmail"]);
 
         if (empty($participantByEmail)) {
-            return [
-                "status" => "error",
-                "message" => "Пользователь с данной почтой не найдет"
-            ];
+            return self::response(false, "Пользователь с данной почтой не найдет");
         }
 
         $session = new Session();
         $sessionByIdWithPartisipants = $session->getByIdWithParticipants($requestData["sessionId"]);
 
         if (empty($sessionByIdWithPartisipants)) {
-            return [
-                "status" => "error",
-                "message" => "Лекция с данным ID не найдена"
-            ];
+            return self::response(false, "Лекция с данным ID не найдена");
         }
 
         if ($this->isValueExist($sessionByIdWithPartisipants["Participants"], "ID", $participantByEmail["ID"])) {
-            return [
-                "status" => "ok",
-                "message" => "Вы уже записывались"
-            ];
+            return self::response(true, "Вы уже записывались");
         }
 
         if (count($sessionByIdWithPartisipants["Participants"]) >= $sessionByIdWithPartisipants["NumberOfSeats"]) {
-            return [
-                "status" => "error",
-                "message" => "Извините, все места заняты"
-            ];
+            return self::response(false, "Извините, все места заняты");
         }
 
         $session->addParticipant($requestData["sessionId"], $participantByEmail["ID"]);
-
-        return [
-            "status" => "ok",
-            "message" => "Спасибо, вы успешно записаны!"
-        ];
+        return self::response(true, "Спасибо, вы успешно записаны!");
     }
 
     private function isValueExist($array, $key, $value) : bool

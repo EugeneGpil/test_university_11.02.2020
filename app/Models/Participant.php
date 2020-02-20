@@ -8,8 +8,14 @@ use App\Models\Base\Model;
 
 class Participant extends Model
 {
-    public function __construct($id = null)
+    public function __construct()
     {
         $this->tableName = "participant";
+
+        $this->columnNames = [
+            "id",
+            "email",
+            "name"
+        ];
     }
 }

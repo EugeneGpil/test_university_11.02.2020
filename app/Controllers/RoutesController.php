@@ -41,7 +41,7 @@ class RoutesController extends Controller
             }
         }
 
-        return self::correctResponse(false, "Method not allowed");
+        return self::response(false, "Method not allowed");
     }
 
     private static function getUrl()
