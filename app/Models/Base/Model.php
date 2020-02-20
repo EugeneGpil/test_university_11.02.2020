@@ -20,16 +20,29 @@ abstract class Model
         "session_speaker"
     ];
 
-    public static function getDB() {
+    private const CONNECTION_PARAMS = [
+        "default",
+        "no_database"
+    ];
 
-        if (self::$DB) {
-            return self::$DB;
+    public static function getDB($param = "default") {
+
+        if (!in_array($param, self::CONNECTION_PARAMS)) {
+            return null;
         }
 
+        if (self::$DB[$param]) {
+            return self::$DB[$param];
+        }
+        
         $config = include(__DIR__ . "/../../../config.php");
-        self::$DB = new PDO(
-            "mysql:host=" . $config["database_server"] .
-                ";dbname=" . $config["database_name"],
+        $hostDatabaseString = "mysql:host=" . $config["database_server"];
+        if ($param != "no_database") {
+            $hostDatabaseString = $hostDatabaseString . ";dbname=" . $config["databese_name"];
+        }
+
+        self::$DB[$param] = new PDO(
+            $hostDatabaseString,
             $config["database_user"],
             $config["database_password"],
             [
@@ -37,7 +50,7 @@ abstract class Model
                 PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC
             ]
         );
-        return self::$DB;
+        return self::$DB[$param];
     }
 
     public function getAll() : array

@@ -6,7 +6,8 @@ use \App\Models\Base\Model;
 
 $config = include(__DIR__ . "/config.php");
 
-$migration = Model::getDB()->prepare('
+$migration = Model::getDB("no_database")->prepare('
+    CREATE DATABASE IF NOT EXISTS `' . $config["database_name"] . '`;
     USE `' . $config["database_name"] . '`;
     CREATE TABLE IF NOT EXISTS `news` ( 
         `id` int(11) NOT NULL AUTO_INCREMENT,
