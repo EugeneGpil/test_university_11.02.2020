@@ -1,6 +1,6 @@
 <?php
 
-$CONFIG = [
+return [
     'database_server' => 'localhost',
     'database_user' => 'root',
     'database_password' => '',
