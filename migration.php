@@ -1,10 +1,12 @@
 <?php
 
 require_once __DIR__ . "/app/Models/Base/Model.php";
+require_once __DIR__ . "/app/Config.php";
 
 use \App\Models\Base\Model;
+use \App\Config;
 
-$config = include(__DIR__ . "/config.php");
+$config = Config::getConfig();
 
 $migration = Model::getDB("no_database")->prepare('
     CREATE DATABASE IF NOT EXISTS `' . $config["database_name"] . '`;

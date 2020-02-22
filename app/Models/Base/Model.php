@@ -3,6 +3,7 @@
 namespace App\Models\Base;
 
 use PDO;
+use \App\Config;
 
 abstract class Model
 {
@@ -25,8 +26,8 @@ abstract class Model
         "no_database"
     ];
 
-    public static function getDB($param = "default") {
-
+    public static function getDB($param = "default")
+    {
         if (!in_array($param, self::CONNECTION_PARAMS)) {
             return null;
         }
@@ -34,11 +35,11 @@ abstract class Model
         if (self::$DB[$param]) {
             return self::$DB[$param];
         }
-        
-        $config = include(__DIR__ . "/../../../config.php");
+
+        $config = Config::getConfig();
         $hostDatabaseString = "mysql:host=" . $config["database_server"];
         if ($param != "no_database") {
-            $hostDatabaseString = $hostDatabaseString . ";dbname=" . $config["databese_name"];
+            $hostDatabaseString = $hostDatabaseString . ";dbname=" . $config["database_name"];
         }
 
         self::$DB[$param] = new PDO(
@@ -53,32 +54,40 @@ abstract class Model
         return self::$DB[$param];
     }
 
-    public function getAll() : array
+    public function getAll(): array
     {
-        if (!in_array($this->tableName, self::TABLE_NAMES)) { return []; }
-        $all = $this->getDB()->query("SELECT * FROM `" . $this->tableName . "`");
+        if (!in_array($this->tableName, self::TABLE_NAMES)) {
+            return [];
+        }
+        $all = $this->getDB()->query("SELECT * FROM `" . $this->tableName . "` LIMIT 1000");
         return $this->changeListKeys($all->fetchAll());
     }
 
-    public function getById($id) : array
+    public function getById($id): array
     {
         return $this->getByColumn("id", $id);
     }
 
     public function getByColumn($columnName, $value)
     {
-        if (!in_array($this->tableName, self::TABLE_NAMES)
-            || !in_array($columnName, $this->columnNames)) { return []; }
+        if (
+            !in_array($this->tableName, self::TABLE_NAMES)
+            || !in_array($columnName, $this->columnNames)
+        ) {
+            return [];
+        }
         $needed = $this->getDB()->prepare("
             SELECT * FROM `" . $this->tableName . "` WHERE `" . $columnName . "` = ? LIMIT 1
         ");
         $needed->execute([$value]);
         $needed = $needed->fetchAll();
-        if (empty($needed)) { return []; }
+        if (empty($needed)) {
+            return [];
+        }
         return $this->changeArrayKeys($needed[0]);
     }
 
-    protected function addRelation($relationshipTableName, $id1, $id2) : bool
+    protected function addRelation($relationshipTableName, $id1, $id2): bool
     {
         [$firstTableName, $secondTableName] = self::getRelatedTableNames($relationshipTableName);
 
@@ -96,21 +105,24 @@ abstract class Model
 
     protected function isRelationTableNamesAllowed($relationshipTableName, $firstTableName, $secondTableName)
     {
-        if (!in_array($relationshipTableName, self::TABLE_NAMES)
+        if (
+            !in_array($relationshipTableName, self::TABLE_NAMES)
             || !isset($this->relationTableColumnNames[$relationshipTableName])
             || !in_array($firstTableName, $this->relationTableColumnNames[$relationshipTableName])
-            || !in_array($secondTableName, $this->relationTableColumnNames[$relationshipTableName]))
-                { return false; }
+            || !in_array($secondTableName, $this->relationTableColumnNames[$relationshipTableName])
+        ) {
+            return false;
+        }
 
         return true;
     }
 
-    protected function isItRelated($relationsTableName, $id1, $id2) : bool
+    protected function isItRelated($relationsTableName, $id1, $id2): bool
     {
         [$firstTableName, $secondTableName] = self::getRelatedTableNames($relationsTableName);
 
-        if (!$this->isRelationTableNamesAllowed($relationsTableName, $firstTableName, $secondTable)) {
-            return [];
+        if (!$this->isRelationTableNamesAllowed($relationsTableName, $firstTableName, $secondTableName)) {
+            return false;
         }
 
         $result = $this->getDB()->prepare("
@@ -124,27 +136,32 @@ abstract class Model
         return (bool) $result["COUNT(*)"];
     }
 
-    protected function getByIdWithRelations($id, $relationshipTableName) : array
+    protected function getByIdWithRelations($id, $relationshipTableName): array
     {
 
         $mainData = $this->getById($id);
 
-        if (empty($mainData)) { return []; }
+        if (empty($mainData)) {
+            return [];
+        }
 
         $toRelateTableName = $this->getToRelateTableName($relationshipTableName);
 
-        if (!in_array($toRelateTableName, self::TABLE_NAMES)
+        if (
+            !in_array($toRelateTableName, self::TABLE_NAMES)
             || !in_array($relationshipTableName, self::TABLE_NAMES)
             || !in_array($this->tableName, self::TABLE_NAMES)
             || !isset($this->relationTableColumnNames[$relationshipTableName])
-            || !in_array($toRelateTableName, $this->relationTableColumnNames[$relationshipTableName]))
-                { return []; }
+            || !in_array($toRelateTableName, $this->relationTableColumnNames[$relationshipTableName])
+        ) {
+            return [];
+        }
 
         $relations = $this->getDB()->prepare("
             SELECT `" . $toRelateTableName . "`.`id`, `" . $toRelateTableName . "`.`name`
                 FROM `" . $relationshipTableName . "` LEFT JOIN `$toRelateTableName`
                 ON `" . $toRelateTableName . "` = `" . $toRelateTableName . "`.`id`
-                WHERE " . $relationshipTableName . "." . $this->tableName . " = ?;
+                WHERE " . $relationshipTableName . "." . $this->tableName . " = ? LIMIT 1000;
         ");
         $relations->execute([$id]);
         $relations = $relations->fetchAll();
@@ -153,7 +170,7 @@ abstract class Model
         return $mainData;
     }
 
-    protected function getAllWithRelations($relationshipTableName) : array
+    protected function getAllWithRelations($relationshipTableName): array
     {
         $mainData = $this->getAll();
 
@@ -165,7 +182,7 @@ abstract class Model
 
         $relations = $this->getDB()->query("
             SELECT `" . $this->tableName . "`, `" . $secondTableName . "`
-            FROM `" . $relationshipTableName . "`;
+            FROM `" . $relationshipTableName . "` LIMIT 1000;
         ");
         $relations = $relations->fetchAll();
 
@@ -174,13 +191,15 @@ abstract class Model
         }
 
         $secondTable = $this->getDB()->query("
-            SELECT * FROM `" . $secondTableName . "`;
+            SELECT * FROM `" . $secondTableName . "` LIMIT 1000;
         ");
         $secondTable = $secondTable->fetchAll();
-        
+
         foreach ($mainData as &$mainElement) {
             $allRelations = $this->getAllRelations(
-                $relations, $relationshipTableName, $secondTableName, $mainElement["ID"]
+                $relations,
+                $secondTableName,
+                $mainElement["ID"]
             );
             $mainElement[ucfirst($secondTableName . "s")] =
                 $this->changeListKeys($this->getByIds($secondTable, $allRelations));
@@ -189,7 +208,7 @@ abstract class Model
         return $mainData;
     }
 
-    protected static function getRelatedTableNames($relationshipTableName) : array
+    protected static function getRelatedTableNames($relationshipTableName): array
     {
         $underscorePosition = strpos($relationshipTableName, '_');
         $firstTableName = substr($relationshipTableName, 0, $underscorePosition);
@@ -197,7 +216,7 @@ abstract class Model
         return [$firstTableName, $secondTableName];
     }
 
-    private function getByIds($table, $ids) : array
+    private function getByIds($table, $ids): array
     {
         $result = [];
         foreach ($table as $element) {
@@ -208,7 +227,7 @@ abstract class Model
         return $result;
     }
 
-    private function getAllRelations($relations, $relationshipTableName, $secondTableName, $id) : array
+    private function getAllRelations($relations, $secondTableName, $id): array
     {
         $relationsIds = [];
 
@@ -221,7 +240,7 @@ abstract class Model
         return $relationsIds;
     }
 
-    private function changeListKeys($array) : array
+    private function changeListKeys($array): array
     {
         foreach ($array as &$element) {
             $element = $this->changeArrayKeys($element);
@@ -229,7 +248,7 @@ abstract class Model
         return $array;
     }
 
-    private function changeArrayKeys($array) : array
+    private function changeArrayKeys($array): array
     {
         foreach ($array as $key => $element) {
             $this->changeKey($array, $key, $element);
@@ -237,13 +256,13 @@ abstract class Model
         return $array;
     }
 
-    private function changeKey(&$element, $key, $value) : void
+    private function changeKey(&$element, $key, $value): void
     {
         $element[$this->getChangedKey($key)] = $value;
         unset($element[$key]);
     }
 
-    private function getToRelateTableName($relationshipTableName) : string
+    private function getToRelateTableName($relationshipTableName): string
     {
         $underscorePosition = strpos($relationshipTableName, '_');
         $firstTableName = substr($relationshipTableName, 0, $underscorePosition);
@@ -253,7 +272,7 @@ abstract class Model
         return substr($relationshipTableName, $underscorePosition + 1);
     }
 
-    private function getChangedKey($string) : string
+    private function getChangedKey($string): string
     {
         if ($string == "id") {
             return "ID";

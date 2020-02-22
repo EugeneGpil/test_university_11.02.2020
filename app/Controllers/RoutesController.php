@@ -3,6 +3,7 @@
 namespace App\Controllers;
 
 use App\Controllers\Base\Controller;
+use App\Response;
 
 class RoutesController extends Controller
 {
@@ -41,7 +42,7 @@ class RoutesController extends Controller
             }
         }
 
-        return self::response(false, "Method not allowed");
+        return Response::response(false, "Method not allowed");
     }
 
     private static function getUrl()

@@ -3,8 +3,8 @@
 namespace App\Controllers\Tables;
 
 use App\Models\News;
-use App\Helpers\NumericHelper;
 use App\Controllers\Base\Controller;
+use App\Response;
 
 class NewsController extends Controller
 {
@@ -13,15 +13,15 @@ class NewsController extends Controller
         $news = new News();
 
         if (!isset($request["id"])) {
-            return self::response(true, $news->getAll());
+            return Response::response(true, $news->getAll());
         }
 
-        $id = $this->getInt($request["id"]);
+        $id = $this->getValidId($request["id"]);
 
         if (!$id) {
-            return self::response(false, "Некорректное значение id");
+            return Response::response(false, "Некорректное значение id");
         }
 
-        return self::response(true, $news->getById($id));
+        return Response::response(true, $news->getById($id));
     }
 }
